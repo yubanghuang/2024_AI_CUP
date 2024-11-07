@@ -2,10 +2,10 @@
 
 
 ## 資料蒐集裝置位置
-![image](images\資料蒐集裝置位置.png)
+![image](images/upload_format.png)
 
 ## 上傳結果檔案格式
-![image](images\上傳結果檔案格式.png)
+![image](images/supplementary_information.png)
 
 ## 補充事項
-![image](images\補充事項.png)
+![image](images/devices_postion.png)
