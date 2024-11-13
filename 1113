@@ -1,0 +1,77 @@
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ReduceLROnPlateau
+
+# 1. 數據預處理
+
+# 假設 X_train 和 X_test 已經準備好，並且是數值型數據
+scaler = StandardScaler()
+
+# 假設 X_train 和 X_test 是 DataFrame
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 檢查數據的形狀
+print(X_train_scaled.shape)  # 應該是 (樣本數量, 特徵數量)
+print(X_test_scaled.shape)
+
+# 2. 建立時間序列的滯後特徵
+def create_sequences(data, n_steps):
+    X, y = [], []
+    for i in range(len(data) - n_steps):
+        seq_x = data[i:i + n_steps]  # 用前 n_steps 筆的數據
+        seq_y = data[i + n_steps]    # 預測下一個數據
+        X.append(seq_x)
+        y.append(seq_y)
+    return np.array(X), np.array(y)
+
+n_steps = 10  # 用前十筆資料來做預測
+X_train_seq, y_train_seq = create_sequences(X_train_scaled, n_steps)
+X_test_seq, y_test_seq = create_sequences(X_test_scaled, n_steps)
+
+# 檢查數據形狀
+print(X_train_seq.shape)  # 應該是 (樣本數量, n_steps, 特徵數量)
+print(X_test_seq.shape)
+
+# 3. 建立 LSTM 模型
+
+model = Sequential()
+
+# 第一層 LSTM 層
+model.add(LSTM(units=100, activation='relu', return_sequences=True, input_shape=(X_train_seq.shape[1], X_train_seq.shape[2])))
+model.add(Dropout(0.2))  # Dropout 來防止過擬合
+
+# 第二層 LSTM 層
+model.add(LSTM(units=50, activation='relu'))
+model.add(Dropout(0.2))  # Dropout
+
+# 輸出層 (回歸任務)
+model.add(Dense(units=X_train_seq.shape[2]))
+
+# 編譯模型
+optimizer = Adam(learning_rate=0.001)  # 設置學習率
+model.compile(optimizer=optimizer, loss='mean_squared_error')
+
+model.summary()
+
+# 4. 訓練模型
+
+# 使用 ReduceLROnPlateau 來自動調整學習率
+lr_reducer = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=5, min_lr=0.0001)
+
+model.fit(X_train_seq, y_train_seq, epochs=250, batch_size=32, verbose=1, callbacks=[lr_reducer])
+
+# 5. 預測結果
+
+y_pred = model.predict(X_test_seq)
+
+# 6. 處理預測結果
+y_pred = y_pred.round(2)  # 四捨五入
+y_pred = np.clip(y_pred, 0, None)  # 負數改成0
+
+# 7. 顯示結果
+print("預測結果:", y_pred[:10])
