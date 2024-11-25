@@ -3,7 +3,7 @@
 
 # 訓練模型
 
-# In[9]:
+# In[138]:
 
 
 #%%
@@ -32,24 +32,29 @@ import os
 
 #載入訓練資料
 devices = [
-    'L1','L2','L3','L4',
-    'L5','L6','L7','L8',
-    'L9','L10','L11','L12',
-    'L13','L14','L15','L16',
-    'L17'
+    # 'L1','L2','L3','L4',
+    # 'L5','L6',
+    'L7','L8',
+    # 'L9','L10',
+    'L11',
+    # 'L12',
+    # 'L13',
+    'L14',
+    # 'L15','L16',
+    # 'L17'
     ]
 for device in devices:
     SourceData = pd.read_csv(f"..//Data//MergedSorted//{device}_Merged_Sorted.csv")
 
 
-    # In[10]:
+    # In[139]:
 
 
     one_hot_encode_features = [
         # 'Device_ID',
         # 'Year',
-        # 'Month',
-        'Day',
+        'Month',
+        # 'Day',
         'Hour',
         'Minute',
     ]
@@ -60,7 +65,7 @@ for device in devices:
         'Avg_Temperature(°C)',
         'Avg_Humidity(%)',
         'Avg_Sunlight(Lux)',
-        # 'Avg_Power(mW)',
+        'Avg_Power(mW)',
         
         # 'Avg_Diff_WindSpeed(m/s)',
         # 'Avg_Diff_Pressure(hpa)',
@@ -90,10 +95,10 @@ for device in devices:
         # 'Avg_Lag_3_Power(mW)',
         # 'Avg_Lag_4_Power(mW)',
         
-        # 'Avg_Sin_Hour',
-        # 'Avg_Cos_Hour',
-        # 'Avg_Sin_Minute',
-        # 'Avg_Cos_Minute',
+        'Avg_Sin_Hour',
+        'Avg_Cos_Hour',
+        'Avg_Sin_Minute',
+        'Avg_Cos_Minute',
         
         # 'Max_WindSpeed(m/s)',
         # 'Max_Pressure(hpa)',
@@ -101,6 +106,7 @@ for device in devices:
         'Max_Humidity(%)',
         'Max_Sunlight(Lux)',
         'Max_Power(mW)',
+        
         'Max_Diff_WindSpeed(m/s)',
         'Max_Diff_Pressure(hpa)',
         'Max_Diff_Temperature(°C)',
@@ -129,10 +135,10 @@ for device in devices:
         # 'Max_Lag_3_Power(mW)',
         # 'Max_Lag_4_Power(mW)',
         
-        # 'Max_Sin_Hour',
-        # 'Max_Cos_Hour',
-        # 'Max_Sin_Minute',
-        # 'Max_Cos_Minute',
+        'Max_Sin_Hour',
+        'Max_Cos_Hour',
+        'Max_Sin_Minute',
+        'Max_Cos_Minute',
         
         # 'Min_WindSpeed(m/s)',
         # 'Min_Pressure(hpa)',
@@ -169,17 +175,17 @@ for device in devices:
         # 'Min_Lag_3_Power(mW)',
         # 'Min_Lag_4_Power(mW)',
         
-        # 'Min_Sin_Hour',
-        # 'Min_Cos_Hour',
-        # 'Min_Sin_Minute',
-        # 'Min_Cos_Minute'
+        'Min_Sin_Hour',
+        'Min_Cos_Hour',
+        'Min_Sin_Minute',
+        'Min_Cos_Minute'
     ]
-
+    target_column = ['Avg_Power(mW)']
     SourceData = SourceData[['SeqNumber'] + to_predict_features_model_1 + one_hot_encode_features]
     SourceData = pd.get_dummies(SourceData, columns=one_hot_encode_features, dtype='int')
 
 
-    # In[11]:
+    # In[140]:
 
 
     def create_dataset(data, LookBackNum):
@@ -220,7 +226,7 @@ for device in devices:
     X_train.shape
 
 
-    # In[12]:
+    # In[141]:
 
 
     #%%
@@ -235,28 +241,29 @@ for device in devices:
     reduce_lr = ReduceLROnPlateau(
         monitor='val_loss', 
         factor=0.5,     # 衰減率
-        patience=5,    
-        min_lr=1e-9
+        patience=10,    
+        min_lr=1e-7
         )
 
     def build_lstm_model(n_timesteps, n_features, n_prediction):
         model = Sequential()
         
         model.add(LSTM(units=256, return_sequences=True, activation='tanh',input_shape=(n_timesteps, n_features)))
+        # model.add(Dropout(0.3))
 
         
         # model.add(LSTM(units=256, return_sequences=True, activation='tanh'))
-        # model.add(Dropout(0.2))
-    
+        # model.add(Dropout(0.1))
     
         model.add(LSTM(units=256, return_sequences=False, activation='tanh'))
         model.add(Dropout(0.2))
 
 
-        model.add(Dense(units=128))
+        model.add(Dense(units=128, activation='tanh'))
         model.add(Dropout(0.2))
+
         
-        model.add(Dense(units=n_prediction))
+        model.add(Dense(units=n_prediction, activation='tanh'))
 
         
         model.compile(
@@ -270,7 +277,7 @@ for device in devices:
     regressor = build_lstm_model(n_timesteps, n_features, n_prediction)
 
 
-    # In[13]:
+    # In[142]:
 
 
     #開始訓練
@@ -285,7 +292,7 @@ for device in devices:
         )
 
 
-    # In[14]:
+    # In[143]:
 
 
     # import matplotlib.pyplot as plt
@@ -306,7 +313,7 @@ for device in devices:
     # plt.show()
 
 
-    # In[15]:
+    # In[144]:
 
 
     #保存模型
@@ -317,155 +324,30 @@ for device in devices:
 
     # ## 訓練迴歸模型
 
-    # In[16]:
+    # In[145]:
 
 
     TrainData = pd.read_csv(f"..//Data//MergedSorted//{device}_Merged_Sorted.csv")
     TrainData.dropna(inplace=True)
 
 
-    # In[35]:
+    # In[146]:
 
 
-    input_features_model_2 = [
-        # 'Avg_WindSpeed(m/s)',
-        # 'Avg_Pressure(hpa)',
-        'Avg_Temperature(°C)',
-        'Avg_Humidity(%)',
-        'Avg_Sunlight(Lux)',
-        # 'Avg_Power(mW)',
-        
-        # 'Avg_Diff_WindSpeed(m/s)',
-        # 'Avg_Diff_Pressure(hpa)',
-        'Avg_Diff_Temperature(°C)',
-        'Avg_Diff_Humidity(%)',
-        'Avg_Diff_Sunlight(Lux)',
-        'Avg_Diff_Power(mW)',
-        
-        # 'Avg_Lag_1_WindSpeed(m/s)',
-        # 'Avg_Lag_2_WindSpeed(m/s)',
-        # 'Avg_Lag_1_Pressure(hpa)',
-        # 'Avg_Lag_2_Pressure(hpa)',
-        'Avg_Lag_1_Temperature(°C)',
-        'Avg_Lag_2_Temperature(°C)',
-        # 'Avg_Lag_3_Temperature(°C)',
-        # 'Avg_Lag_4_Temperature(°C)',
-        'Avg_Lag_1_Humidity(%)',
-        'Avg_Lag_2_Humidity(%)',
-        # 'Avg_Lag_3_Humidity(%)',
-        # 'Avg_Lag_4_Humidity(%)',
-        'Avg_Lag_1_Sunlight(Lux)',
-        'Avg_Lag_2_Sunlight(Lux)',
-        # 'Avg_Lag_3_Sunlight(Lux)',
-        # 'Avg_Lag_4_Sunlight(Lux)',
-        # 'Avg_Lag_1_Power(mW)',
-        # 'Avg_Lag_2_Power(mW)',
-        # 'Avg_Lag_3_Power(mW)',
-        # 'Avg_Lag_4_Power(mW)',
-        
-        # 'Avg_Sin_Hour',
-        # 'Avg_Cos_Hour',
-        # 'Avg_Sin_Minute',
-        # 'Avg_Cos_Minute',
-        
-        # 'Max_WindSpeed(m/s)',
-        # 'Max_Pressure(hpa)',
-        'Max_Temperature(°C)',
-        'Max_Humidity(%)',
-        'Max_Sunlight(Lux)',
-        'Max_Power(mW)',
-        'Max_Diff_WindSpeed(m/s)',
-        'Max_Diff_Pressure(hpa)',
-        'Max_Diff_Temperature(°C)',
-        'Max_Diff_Humidity(%)',
-        'Max_Diff_Sunlight(Lux)',
-        'Max_Diff_Power(mW)',
-        
-        # 'Max_Lag_1_WindSpeed(m/s)',
-        # 'Max_Lag_2_WindSpeed(m/s)',
-        # 'Max_Lag_1_Pressure(hpa)',
-        # 'Max_Lag_2_Pressure(hpa)',
-        'Max_Lag_1_Temperature(°C)',
-        'Max_Lag_2_Temperature(°C)',
-        # 'Max_Lag_3_Temperature(°C)',
-        # 'Max_Lag_4_Temperature(°C)',
-        'Max_Lag_1_Humidity(%)',
-        'Max_Lag_2_Humidity(%)',
-        # 'Max_Lag_3_Humidity(%)',
-        # 'Max_Lag_4_Humidity(%)',
-        'Max_Lag_1_Sunlight(Lux)',
-        'Max_Lag_2_Sunlight(Lux)',
-        # 'Max_Lag_3_Sunlight(Lux)',
-        # 'Max_Lag_4_Sunlight(Lux)',
-        # 'Max_Lag_1_Power(mW)',
-        # 'Max_Lag_2_Power(mW)',
-        # 'Max_Lag_3_Power(mW)',
-        # 'Max_Lag_4_Power(mW)',
-        
-        # 'Max_Sin_Hour',
-        # 'Max_Cos_Hour',
-        # 'Max_Sin_Minute',
-        # 'Max_Cos_Minute',
-        
-        # 'Min_WindSpeed(m/s)',
-        # 'Min_Pressure(hpa)',
-        'Min_Temperature(°C)',
-        'Min_Humidity(%)',
-        'Min_Sunlight(Lux)',
-        'Min_Power(mW)',
-        
-        # 'Min_Diff_WindSpeed(m/s)',
-        # 'Min_Diff_Pressure(hpa)',
-        'Min_Diff_Temperature(°C)',
-        'Min_Diff_Humidity(%)',
-        'Min_Diff_Sunlight(Lux)',
-        'Min_Diff_Power(mW)',
-        
-        # 'Min_Lag_1_WindSpeed(m/s)',
-        # 'Min_Lag_2_WindSpeed(m/s)',
-        # 'Min_Lag_1_Pressure(hpa)',
-        # 'Min_Lag_2_Pressure(hpa)',
-        'Min_Lag_1_Temperature(°C)',
-        'Min_Lag_2_Temperature(°C)',
-        # 'Min_Lag_3_Temperature(°C)',
-        # 'Min_Lag_4_Temperature(°C)',
-        'Min_Lag_1_Humidity(%)',
-        'Min_Lag_2_Humidity(%)',
-        # 'Min_Lag_3_Humidity(%)',
-        # 'Min_Lag_4_Humidity(%)',
-        'Min_Lag_1_Sunlight(Lux)',
-        'Min_Lag_2_Sunlight(Lux)',
-        # 'Min_Lag_3_Sunlight(Lux)',
-        # 'Min_Lag_4_Sunlight(Lux)',
-        # 'Min_Lag_1_Power(mW)',
-        # 'Min_Lag_2_Power(mW)',
-        # 'Min_Lag_3_Power(mW)',
-        # 'Min_Lag_4_Power(mW)',
-        
-        # 'Min_Sin_Hour',
-        # 'Min_Cos_Hour',
-        # 'Min_Sin_Minute',
-        # 'Min_Cos_Minute'
-    ]
+    X_full = TrainData[input_features_model_1]
+    X_full[input_features_model_1] = preprocess_pipe.transform(X_full[input_features_model_1])
 
-
-    # In[36]:
-
-
-    X_full = TrainData[input_features_model_2]
-
-    if 'Avg_Power(mW)' in input_features_model_2 :
-        X_full = X_full.drop(columns='Avg_Power(mW)').values
+    if 'Avg_Power(mW)' in input_features_model_1 :
+        X_full = X_full.drop(columns='Avg_Power(mW)')
     else:
-        X_full = X_full.values
+        X_full = X_full
         
+    X_full = X_full.values
     y_full = TrainData['Avg_Power(mW)'].values
 
     X_train, X_val, y_train, y_val = train_test_split(X_full,y_full,test_size=0.2,shuffle=True)
 
     reg_model = make_pipeline(
-        MinMaxScaler(),
-        PCA(n_components=40),
         LinearRegression(),
     )
 
@@ -473,13 +355,13 @@ for device in devices:
     cv_scores
 
 
-    # In[37]:
+    # In[147]:
 
 
     reg_model.fit(X_train, y_train)
 
 
-    # In[38]:
+    # In[148]:
 
 
     from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -492,7 +374,7 @@ for device in devices:
     print('R2:',r2_score(y_val, y_pred))
 
 
-    # In[54]:
+    # In[149]:
 
 
     reg_model.fit(X_full, y_full)
@@ -500,7 +382,7 @@ for device in devices:
 
     # ## 預測答案
 
-    # In[21]:
+    # In[150]:
 
 
     #載入模型
@@ -509,7 +391,7 @@ for device in devices:
     print('Model Loaded Successfully')
 
 
-    # In[22]:
+    # In[151]:
 
 
     TestData = pd.read_csv('..//Data/TestData//upload(no answer).csv')
@@ -523,7 +405,7 @@ for device in devices:
     len(indices_1)
 
 
-    # In[23]:
+    # In[152]:
 
 
     index_min = min(indices_1) - n_timesteps
@@ -540,7 +422,7 @@ for device in devices:
     len(indices_with_na)
 
 
-    # In[24]:
+    # In[153]:
 
 
     # 如果 LookBackNum > 12 選 indices_with_na
@@ -549,8 +431,10 @@ for device in devices:
     indices_to_use = indices_with_na if LookBackNum > 12 else indices_1
 
     for index in indices_to_use:
-        X = PredictedData.loc[index-LookBackNum : index-1].drop(columns=["SeqNumber"])
-            
+        X = PredictedData.loc[index-LookBackNum : index-1].drop(columns="SeqNumber")
+        # if 'Avg_Power(mW)' in X.columns.to_list():
+        #     X = X.drop(columns='Avg_Power(mW)')
+        
         X[to_predict_features_model_1] = preprocess_pipe.transform(X[to_predict_features_model_1])
         X = X.values
         X = np.reshape(X,(1, n_timesteps, n_features))
@@ -558,51 +442,32 @@ for device in devices:
         pred = model.predict(X)
         pred = preprocess_pipe.inverse_transform(pred)
         PredictedData.loc[index, to_predict_features_model_1] = pred
+        # PredictedData.loc[index, ['Avg_Power(mW)']] = PredictedData.loc[index, ['Avg_Power(mW)']].apply(lambda x: 0 if x <= 0 else x)
         
-        X = PredictedData.loc[index, input_features_model_2].to_frame().T
-        if 'Avg_Power(mW)' in input_features_model_2:
+        X = PredictedData.loc[index, to_predict_features_model_1].to_frame().T
+        X[to_predict_features_model_1] = preprocess_pipe.transform(X[to_predict_features_model_1])
+        if 'Avg_Power(mW)' in to_predict_features_model_1:
             X = X.drop(columns='Avg_Power(mW)').values
         else:
             X = X.values
         
         pred = reg_model.predict(X)
+        pred = pred[0]
         pred = np.clip(pred, 0, None)
         PredictedData.loc[index, 'Avg_Power(mW)'] = pred
 
 
-    # In[25]:
+    # In[ ]:
 
 
-    PredictedData.loc[indices_1][['Min_Power(mW)','Avg_Power(mW)','Max_Power(mW)']]
+    i = 0
+    day = 48
+    PredictedData.loc[indices_1][(day*i):(day*(i+1))]
 
 
-    # In[26]:
+    # In[ ]:
 
 
     PredictedData.loc[indices_1].to_csv(f'..//Data//PredictedData//Predicted_{device}.csv', index=False)
-
-
-    # In[61]:
-
-
-    # PredictedData = pd.read_csv(f'..//Data//PredictedData//Predicted_{device}.csv')
-
-    # X_Test = PredictedData[input_features_model_2].drop(columns=['Avg_Power(mW)']).values
-
-    # y_pred = reg_model.predict(X_Test)
-    # y_pred = np.clip(y_pred, 0, None)
-    # y_pred = y_pred.reshape(-1, 1)
-    # PredictedData[['Avg_Power(mW)']] = y_pred
-
-
-    # # In[65]:
-
-
-    # PredictedData[['Min_Power(mW)','Avg_Power(mW)','Max_Power(mW)']]
-
-
-    # # In[66]:
-
-
-    # PredictedData.to_csv(f'..//Data//PredictedData//Predicted_{device}.csv', index=False)
+    PredictedData.to_csv(f'..//Data//PredictedOverAllData//Predicted_OverAll_{device}.csv', index=False)
 
